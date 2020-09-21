@@ -21,14 +21,17 @@ import github.com.vikramezhil.dks.utils.parseSpeechResult
 import github.com.vikramezhil.dks.view.alert.DksFullScreenDialog
 import github.com.vikramezhil.dks.view.alert.DksFullScreenDialogListener
 import github.com.vikramezhil.dks.view.alert.DksLiveObservers
-import java.lang.Exception
 
 /**
  * Droid Kotlin Speech
  * @author vikramezhil
  */
 
-class Dks(private val app: Application, private val manager: FragmentManager?, private val listener: DksListener): DksEngine() {
+class Dks(
+    private val app: Application,
+    private val manager: FragmentManager?,
+    private val listener: DksListener
+) : DksEngine() {
 
     override var speechRecognizer: SpeechRecognizer? = SpeechRecognizer.createSpeechRecognizer(app)
 
@@ -41,9 +44,8 @@ class Dks(private val app: Application, private val manager: FragmentManager?, p
         }
     }
 
-    override var languageDetailsIntent: Intent = RecognizerIntent.getVoiceDetailsIntent(app)
-
-    override var audioManager: AudioManager = app.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    override var audioManager: AudioManager =
+        app.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
     override var restartSpeechHandler: Handler = Handler()
 
@@ -86,14 +88,21 @@ class Dks(private val app: Application, private val manager: FragmentManager?, p
     override var oneStepResultVerify: Boolean = false
 
     init {
-        speechIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+        speechIntent.putExtra(
+            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+        )
         speechIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, app.packageName)
         speechIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
         speechIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, maxVoiceResults)
 
-        languageDetailsIntent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
-        app.sendOrderedBroadcast(languageDetailsIntent, null, DksLanguageReceiver(object: DksLanguageListener {
-            override fun onDksSupportedLanguages(defaultLanguage: String?, supportedLanguages: ArrayList<String>?) {
+        val detailsIntent = Intent(RecognizerIntent.ACTION_GET_LANGUAGE_DETAILS)
+        app.sendOrderedBroadcast(detailsIntent, null, DksLanguageReceiver(object :
+            DksLanguageListener {
+            override fun onDksSupportedLanguages(
+                defaultLanguage: String?,
+                supportedLanguages: ArrayList<String>?
+            ) {
                 currentSpeechLanguage = defaultLanguage
                 supportedSpeechLanguages = supportedLanguages
 
@@ -107,7 +116,10 @@ class Dks(private val app: Application, private val manager: FragmentManager?, p
         if (partialRestartActive) partialRestartActive = false else speechResult.value = ""
 
         // Setting the current speech language if applicable
-        if (currentSpeechLanguage != null && currentSpeechLanguage!!.isNotEmpty() && supportedSpeechLanguages != null  && supportedSpeechLanguages!!.contains(currentSpeechLanguage!!)) {
+        if (currentSpeechLanguage != null && currentSpeechLanguage!!.isNotEmpty() && supportedSpeechLanguages != null && supportedSpeechLanguages!!.contains(
+                currentSpeechLanguage!!
+            )
+        ) {
             speechIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, currentSpeechLanguage)
             speechIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, currentSpeechLanguage)
         }
@@ -123,8 +135,10 @@ class Dks(private val app: Application, private val manager: FragmentManager?, p
             finalSpeechResultFound = false
 
             // Setting the speech recognizer listeners
-            speechRecognizer?.setRecognitionListener(object: RecognitionListener {
-                override fun onReadyForSpeech(params: Bundle?) { onReadyForSpeech = true }
+            speechRecognizer?.setRecognitionListener(object : RecognitionListener {
+                override fun onReadyForSpeech(params: Bundle?) {
+                    onReadyForSpeech = true
+                }
 
                 override fun onBeginningOfSpeech() {}
 
@@ -231,7 +245,13 @@ class Dks(private val app: Application, private val manager: FragmentManager?, p
                     // Disabling/Enabling audio based on "audio beep disabled timeout",
                     mute(onReadyForSpeech && errDuration < audioBeepDisabledTimeout)
 
-                    if (arrayOf(SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT, SpeechRecognizer.ERROR_AUDIO, SpeechRecognizer.ERROR_RECOGNIZER_BUSY).any { it == error }) {
+                    if (arrayOf(
+                            SpeechRecognizer.ERROR_NO_MATCH,
+                            SpeechRecognizer.ERROR_SPEECH_TIMEOUT,
+                            SpeechRecognizer.ERROR_AUDIO,
+                            SpeechRecognizer.ERROR_RECOGNIZER_BUSY
+                        ).any { it == error }
+                    ) {
                         // Restarting speech recognition
                         restartSpeechRecognition(error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY)
                     } else if (error < app.resources.getStringArray(R.array.dks_errors).size) {
@@ -302,7 +322,11 @@ class Dks(private val app: Application, private val manager: FragmentManager?, p
     override fun mute(mute: Boolean) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, if (mute) AudioManager.ADJUST_MUTE else AudioManager.ADJUST_UNMUTE, 0)
+                audioManager.adjustStreamVolume(
+                    AudioManager.STREAM_MUSIC,
+                    if (mute) AudioManager.ADJUST_MUTE else AudioManager.ADJUST_UNMUTE,
+                    0
+                )
             } else {
                 audioManager.setStreamMute(AudioManager.STREAM_MUSIC, mute)
             }
@@ -310,7 +334,11 @@ class Dks(private val app: Application, private val manager: FragmentManager?, p
             e.printStackTrace()
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0)
+                audioManager.adjustStreamVolume(
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.ADJUST_UNMUTE,
+                    0
+                )
             } else {
                 audioManager.setStreamMute(AudioManager.STREAM_MUSIC, false)
             }
@@ -328,38 +356,60 @@ class Dks(private val app: Application, private val manager: FragmentManager?, p
         if (!showProgressView) return
         progressViewInactive = false
 
-        val observers = DksLiveObservers(speechResult, speechFrequency, speechOneStepVerify, resetActionButtons, ejectProgressView)
-        manager?.beginTransaction()?.add(DksFullScreenDialog(progressViewLayout, manager, observers, object: DksFullScreenDialogListener {
-            override fun onSuccess(result: String) {
-                // Sending an update on the final speech result
-                listener.onDksFinalSpeechResult(result)
-                if (continuousSpeechRecognition) startSpeechRecognition() else ejectProgressView.value = true
-            }
+        val observers = DksLiveObservers(
+            speechResult,
+            speechFrequency,
+            speechOneStepVerify,
+            resetActionButtons,
+            ejectProgressView
+        )
+        manager?.beginTransaction()?.add(
+            DksFullScreenDialog(
+                progressViewLayout,
+                manager,
+                observers,
+                object : DksFullScreenDialogListener {
+                    override fun onSuccess(result: String) {
+                        // Sending an update on the final speech result
+                        listener.onDksFinalSpeechResult(result)
+                        if (continuousSpeechRecognition) startSpeechRecognition() else ejectProgressView.value =
+                            true
+                    }
 
-            override fun onRetry() { startSpeechRecognition() }
+                    override fun onRetry() {
+                        startSpeechRecognition()
+                    }
 
-            override fun onClose() {
-                closedByUser = true
-                progressViewInactive = true
-                closeSpeechOperations()
-            }
+                    override fun onClose() {
+                        closedByUser = true
+                        progressViewInactive = true
+                        closeSpeechOperations()
+                    }
 
-            override fun onPause() { closeSpeechOperations() }
+                    override fun onPause() {
+                        closeSpeechOperations()
+                    }
 
-            override fun onResume() { startSpeechRecognition() }
+                    override fun onResume() {
+                        startSpeechRecognition()
+                    }
 
-            override fun onMicrophonePermissionStatus(statusGiven: Boolean, restartSpeechOps: Boolean) {
-                if (statusGiven) {
-                    if (restartSpeechOps && !onReadyForSpeech) startSpeechRecognition()
-                } else {
-                    // Sending an update that the microphone permission is required
-                    listener.onDksSpeechError(app.resources.getString(R.string.dks_mic_permissions_required))
+                    override fun onMicrophonePermissionStatus(
+                        statusGiven: Boolean,
+                        restartSpeechOps: Boolean
+                    ) {
+                        if (statusGiven) {
+                            if (restartSpeechOps && !onReadyForSpeech) startSpeechRecognition()
+                        } else {
+                            // Sending an update that the microphone permission is required
+                            listener.onDksSpeechError(app.resources.getString(R.string.dks_mic_permissions_required))
 
-                    closeSpeechOperations()
-                    ejectProgressView.value = true
-                }
-            }
-        }), DksFullScreenDialog.TAG)?.commit()
+                            closeSpeechOperations()
+                            ejectProgressView.value = true
+                        }
+                    }
+                }), DksFullScreenDialog.TAG
+        )?.commit()
     }
 
     override fun ejectProgressView() {

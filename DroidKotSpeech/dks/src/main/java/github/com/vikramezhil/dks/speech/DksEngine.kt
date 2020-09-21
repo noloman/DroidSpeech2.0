@@ -23,8 +23,6 @@ abstract class DksEngine {
 
     protected abstract var speechIntent: Intent
 
-    protected abstract var languageDetailsIntent: Intent
-
     protected abstract var audioManager: AudioManager
 
     protected abstract var restartSpeechHandler: Handler
